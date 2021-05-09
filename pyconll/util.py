@@ -256,7 +256,7 @@ def peek(iterable: Iterable[T]) -> Tuple[T, Iterable[T]]:
         return first, iterable
     except:
         first = next(iterable)
-        return first, itertools.chain((first,), it)
+        return first, itertools.chain((first,), iterable)
 
 def peek_to_next_truthy(iterable: Iterable[T]) -> Tuple[T, Iterable[T]]:
     first, it = peek(iterable)

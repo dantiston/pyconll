@@ -6,7 +6,7 @@ from typing import Any, ClassVar, Iterable, Iterator, List, Union, MutableSequen
 
 import pyconll._parser
 
-from pyconll import util
+from pyconll import load
 from pyconll.conllable import Conllable
 from pyconll.unit.sentence import Sentence
 
@@ -22,10 +22,6 @@ class Conll(MutableSequence[Sentence], Conllable):
     to the standard CoNLL-U format.
     """
 
-    CONLL_U_FORMAT: ClassVar[Tuple[str]] = ('id', 'form', 'lemma', 'upos', 'xpos', 'feats', 'head', 'deprel', 'deps', 'misc')
-
-    COLUMNS_SPECIFIER: ClassVar[str] = '# global.columns ='
-
     __slots__ = ['_columns', '_sentences']
 
     def __init__(self, it: Iterable[str]) -> None:
@@ -39,12 +35,7 @@ class Conll(MutableSequence[Sentence], Conllable):
             ParseError: If there is an error constructing the sentences in the
                 iterator.
         """
-        first_line, it = util.peek_to_next_truthy(it)
-        self._columns = tuple(first_line[len(Conll.COLUMNS_SPECIFIER)+1:].strip().lower().split()) \
-            if first_line.startswith(Conll.COLUMNS_SPECIFIER) else Conll.CONLL_U_FORMAT
-        print("*"*80)
-        print(first_line)
-        print(self._columns)
+        self._columns = load._get_columns_definition(it)
         self._sentences: List[Sentence] = list(pyconll._parser.iter_sentences(it, self._columns))
 
     def conll(self) -> str:

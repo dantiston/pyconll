@@ -20,6 +20,22 @@ def test_load_from_string():
     assert sent['10'].form == 'donc'
 
 
+def test_load_from_string_conllup():
+    """
+    Test that a CoNLL-U Plus file can properly be loaded from a string.
+    """
+    with open(fixture_location('basic.conllup'), encoding='utf-8') as f:
+        contents = f.read()
+
+    c = load_from_string(contents)
+    sent = c[0]
+
+    assert len(c) == 1
+    assert len(sent) == 21
+    assert sent['5'].form == 'strebt'
+    assert sent['5'].namespace == {'parseme': {'mwe': '2:VPC.full'}}
+
+
 def test_load_from_file():
     """
     Test that a CoNLL file can properly be loaded from a filename.

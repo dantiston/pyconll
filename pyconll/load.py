@@ -5,11 +5,18 @@ storing Conll objects in memory. This module is the main entrance to pyconll's
 functionalities.
 """
 
-from typing import Iterator
+from typing import Iterator, Iterable, Tuple
+
+from pyconll import util
 
 from pyconll._parser import iter_sentences
 from pyconll.unit.conll import Conll
 from pyconll.unit.sentence import Sentence
+
+
+CONLL_U_FORMAT: Tuple[str] = ('id', 'form', 'lemma', 'upos', 'xpos', 'feats', 'head', 'deprel', 'deps', 'misc')
+
+COLUMNS_SPECIFIER: str = '# global.columns ='
 
 
 def load_from_string(source: str) -> Conll:
@@ -68,8 +75,7 @@ def iter_from_string(source: str) -> Iterator[Sentence]:
         ParseError: If there is an error parsing the input into a Conll object.
     """
     lines = source.splitlines()
-    for sentence in iter_sentences(lines):
-        yield sentence
+    yield from _iter_from_iterable(lines)
 
 
 def iter_from_file(filename: str) -> Iterator[Sentence]:
@@ -87,5 +93,13 @@ def iter_from_file(filename: str) -> Iterator[Sentence]:
         ParseError: If there is an error parsing the input into a Conll object.
     """
     with open(filename, encoding='utf-8') as f:
-        for sentence in iter_sentences(f):
-            yield sentence
+        yield from _iter_from_iterable(f)
+
+def _iter_from_iterable(iterable: Iterable[str]) -> Iterator[Sentence]:
+    columns = _get_columns_definition(iterable)
+    yield from iter_sentences(iterable, columns)
+
+def _get_columns_definition(iterable: Iterable[str]) -> Tuple[str]:
+    first_line, it = util.peek_to_next_truthy(iterable)
+    return tuple(first_line[len(COLUMNS_SPECIFIER)+1:].strip().lower().split()) \
+        if first_line.startswith(COLUMNS_SPECIFIER) else CONLL_U_FORMAT
