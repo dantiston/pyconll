@@ -96,10 +96,11 @@ def iter_from_file(filename: str) -> Iterator[Sentence]:
         yield from _iter_from_iterable(f)
 
 def _iter_from_iterable(iterable: Iterable[str]) -> Iterator[Sentence]:
-    columns = _get_columns_definition(iterable)
+    columns, iterable = _get_columns_definition(iterable)
     yield from iter_sentences(iterable, columns)
 
-def _get_columns_definition(iterable: Iterable[str]) -> Tuple[str]:
+def _get_columns_definition(iterable: Iterable[str]) -> Tuple[Tuple[str], Iterable[str]]:
     first_line, it = util.peek_to_next_truthy(iterable)
-    return tuple(first_line[len(COLUMNS_SPECIFIER)+1:].strip().lower().split()) \
+    columns = tuple(first_line[len(COLUMNS_SPECIFIER)+1:].strip().lower().split()) \
         if first_line.startswith(COLUMNS_SPECIFIER) else CONLL_U_FORMAT
+    return columns, it

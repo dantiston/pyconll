@@ -35,8 +35,9 @@ class Conll(MutableSequence[Sentence], Conllable):
             ParseError: If there is an error constructing the sentences in the
                 iterator.
         """
-        self._columns = load._get_columns_definition(it)
-        self._sentences: List[Sentence] = list(pyconll._parser.iter_sentences(it, self._columns))
+        columns, it = load._get_columns_definition(it)
+        self._columns: List[str] = columns
+        self._sentences: List[Sentence] = list(pyconll._parser.iter_sentences(it, columns))
 
     def conll(self) -> str:
         """
