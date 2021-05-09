@@ -4,15 +4,21 @@ in CoNLL-U and so the data and parsing in this module is central to the CoNLL-U
 format.
 """
 
+import itertools
 import functools
 import math
+
 from typing import Callable, ClassVar, Dict, Optional, Set, Tuple
 
 from pyconll.conllable import Conllable
 from pyconll.exception import ParseError, FormatError
 
 
-def _unit_empty_map(value, empty):
+Namespace = Dict[str, str]
+Namespaces = Dict[str, Namespace]
+
+
+def _unit_empty_map(values: Dict[str, str], key: str, empty):
     """
     Map unit values for CoNLL-U columns to a string or None if empty.
 
@@ -23,7 +29,7 @@ def _unit_empty_map(value, empty):
     Returns:
         None if value is empty and value otherwise.
     """
-    return None if value == empty else value
+    return None if key not in values or values[key] == empty else values[key]
 
 
 def _dict_empty_map_parser(v, v_delimiter):
@@ -437,6 +443,19 @@ def _dict_conll_map_helper(values, empty, delim, av_separator, v_delimiter,
     return output if output else empty
 
 
+NAMESPACE_SEPARATOR: str = ":"
+
+
+def _parse_namespaces(values: Dict[str, str]) -> Namespaces:
+    values = {k: v for k, v in values.items() if NAMESPACE_SEPARATOR in k}
+    separated_keys = {namespace: list(k)
+                      for namespace, k in itertools.groupby(
+                          values,
+                          lambda key: key.split(NAMESPACE_SEPARATOR, 1)[0])}
+    return {namespace: {k[len(namespace)+1:]: values[k] for k in keys}
+            for namespace, keys in separated_keys.items()}
+
+
 @functools.total_ordering
 class _TokenIdComparer:
     """
@@ -582,10 +601,7 @@ class _TokenIdComparer:
 
 class Token(Conllable):
     """
-    A token in a CoNLL-U file. This consists of 10 columns, each separated by
-    a single tab character and ending in an LF ('\\n') line break. Each of the 10
-    column values corresponds to a specific component of the token, such as id,
-    word form, lemma, etc.
+    A token in a CoNLL-U Plus file.
 
     This class does not do any formatting validation on input or output. This
     means that invalid input may be properly processed and then output. Or that
@@ -599,10 +615,20 @@ class Token(Conllable):
     sentences.
     """
 
-    __slots__ = [
-        'id', '_form', 'lemma', 'upos', 'xpos', 'feats', 'head', 'deprel',
-        'deps', 'misc'
-    ]
+    # TODO: Think on how this could be brought back
+    # __slots__ = [
+    #     'id',
+    #     'form',
+    #     'lemma',
+    #     'upos',
+    #     'xpos',
+    #     'feats',
+    #     'head',
+    #     'deprel',
+    #     'deps',
+    #     'misc',
+    #     'namespace',
+    # ]
 
     # The different delimiters and separators for the CoNLL-U format.
     # FIELD_DELIMITER separates columns on the token line.
@@ -616,6 +642,7 @@ class Token(Conllable):
     V_DELIMITER: ClassVar[str] = ','
     V_DEPS_DELIMITER: ClassVar[str] = ':'
     EMPTY: ClassVar[str] = '_'
+    NOT_SPECIFIED: ClassVar[str] = '*'
 
     # Keys for sorting attribute-value columns. BY_ID converts the attribute
     # value pair to the integer value of the attribute, and BY_CASE_SENSITIVE
@@ -625,7 +652,7 @@ class Token(Conllable):
     BY_CASE_INSENSITIVE: ClassVar[Callable[[Tuple[
         str, str]], str]] = lambda pair: pair[0].lower()
 
-    def __init__(self, source: str, empty: bool = False) -> None:
+    def __init__(self, source: str, columns: Tuple[str], empty: bool = False) -> None:
         """
         Construct a Token from the given source line.
 
@@ -659,41 +686,45 @@ class Token(Conllable):
 
         fields = source.split(Token.FIELD_DELIMITER)
 
-        if len(fields) != 10:
-            error_msg = 'The number of columns per token line must be 10. Invalid token: {}'.format(
-                source)
-            raise ParseError(error_msg)
+        if len(fields) != len(columns):
+            raise ParseError(f'The number of columns per token line must be'
+                             f' {len(columns)}. Invalid token: {source}')
+
+        values = {column: fields[i] for i, column in enumerate(columns)}
 
         # Assign all the field values from the line to internal equivalents.
-        self.id: str = fields[0]
+        self.id: str = values['id']
 
         # If we can assume the form and lemma are empty, or if either of the
         # fields are not the empty token, then we can proceed as usual.
         # Otherwise, these empty tokens might not mean empty, but rather the
         # actual tokens.
-        if empty or (fields[1] != Token.EMPTY or fields[2] != Token.EMPTY):
-            self._form: Optional[str] = _unit_empty_map(fields[1], Token.EMPTY)
-            self.lemma: Optional[str] = _unit_empty_map(fields[2], Token.EMPTY)
+        if empty or (values.get('form', Token.EMPTY) != Token.EMPTY or values.get('lemma', Token.EMPTY) != Token.EMPTY):
+            self._form: Optional[str] = _unit_empty_map(values, 'form', Token.EMPTY)
+            self.lemma: Optional[str] = _unit_empty_map(values, 'lemma', Token.EMPTY)
         else:
-            self._form = fields[1]
-            self.lemma = fields[2]
+            self._form = values['form']
+            self.lemma = values['lemma']
 
-        self.upos: Optional[str] = _unit_empty_map(fields[3], Token.EMPTY)
-        self.xpos: Optional[str] = _unit_empty_map(fields[4], Token.EMPTY)
-        self.feats: Dict[str,
-                         Set[str]] = _dict_empty_map(fields[5], Token.EMPTY,
+        self.upos: Optional[str] = _unit_empty_map(values, 'upos', Token.EMPTY)
+        self.xpos: Optional[str] = _unit_empty_map(values, 'xpos', Token.EMPTY)
+        self.feats: Dict[str, Set[str]] = _dict_empty_map(
+                                                     values.get('feats', Token.EMPTY),
+                                                     Token.EMPTY,
                                                      Token.COMPONENT_DELIMITER,
                                                      Token.AV_SEPARATOR,
                                                      Token.V_DELIMITER)
-        self.head: Optional[str] = _unit_empty_map(fields[6], Token.EMPTY)
-        self.deprel: Optional[str] = _unit_empty_map(fields[7], Token.EMPTY)
+        self.head: Optional[str] = _unit_empty_map(values, 'head', Token.EMPTY)
+        self.deprel: Optional[str] = _unit_empty_map(values, 'deprel', Token.EMPTY)
         self.deps: Dict[str,
                         Tuple[str, str, str, str]] = _dict_tupled_empty_map(
-                            fields[8], Token.EMPTY, Token.COMPONENT_DELIMITER,
+                            values.get('deps', Token.EMPTY), Token.EMPTY, Token.COMPONENT_DELIMITER,
                             Token.AV_DEPS_SEPARATOR, Token.V_DEPS_DELIMITER, 4)
         self.misc: Dict[str, Optional[Set[str]]] = _dict_mixed_empty_map(
-            fields[9], Token.EMPTY, Token.COMPONENT_DELIMITER,
+            values.get('misc', Token.EMPTY), Token.EMPTY, Token.COMPONENT_DELIMITER,
             Token.AV_SEPARATOR, Token.V_DELIMITER)
+
+        self.namespace: Namespaces = _parse_namespaces(values)
 
     @property
     def form(self) -> Optional[str]:

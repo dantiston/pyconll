@@ -5,11 +5,12 @@ collection of functions.
 
 import functools
 import itertools
-from typing import Iterable, Iterator, Sequence, List, Tuple
+from typing import Iterable, Iterator, TypeVar, Sequence, List, Tuple
 
 from pyconll.unit.sentence import Sentence
 from pyconll.unit.token import Token
 
+T = TypeVar('T')
 
 def find_ngrams(
     conll: Iterable[Sentence],
@@ -247,3 +248,22 @@ def _get_cased(case_sensitive, *args):
     if not case_sensitive:
         args = list(map(str.lower, args))
     return args
+
+
+def peek(iterable: Iterable[T]) -> Tuple[T, Iterable[T]]:
+    try:
+        first = iterable[0]
+        return first, iterable
+    except:
+        first = next(iterable)
+        return first, itertools.chain((first,), it)
+
+def peek_to_next_truthy(iterable: Iterable[T]) -> Tuple[T, Iterable[T]]:
+    first, it = peek(iterable)
+    while not first:
+        try:
+            next(it)
+        except:
+            it = it[1:]
+        first, it = peek(it)
+    return first, it

@@ -2,36 +2,50 @@
 Defines the Conll type and the associated parsing and output logic.
 """
 
-from typing import Any, Iterable, Iterator, List, Union, MutableSequence, overload
+from typing import Any, ClassVar, Iterable, Iterator, List, Union, MutableSequence, Tuple, overload
 
 import pyconll._parser
+
+from pyconll import util
 from pyconll.conllable import Conllable
 from pyconll.unit.sentence import Sentence
 
 
 class Conll(MutableSequence[Sentence], Conllable):
     """
-    The abstraction for a CoNLL-U file. A CoNLL-U file is more or less just a
-    collection of sentences in order. These sentences are accessed by numeric
-    index. Note that sentences must be separated by whitespace. CoNLL-U also
-    specifies that the file must end in a new line but that requirement is
-    relaxed here in parsing.
+    The abstraction for a CoNLL-U Plus file. A CoNLL-U Plus file is more or less
+    just a collection of sentences in order. These sentences are accessed by
+    numeric index. Note that sentences must be separated by whitespace.
+    CoNLL-U Plus also specifies that the file must end in a new line but that
+    requirement is relaxed here in parsing.
+    Generally expects a global.columns field on the first line. Otherwise defaults
+    to the standard CoNLL-U format.
     """
+
+    CONLL_U_FORMAT: ClassVar[Tuple[str]] = ('id', 'form', 'lemma', 'upos', 'xpos', 'feats', 'head', 'deprel', 'deps', 'misc')
+
+    COLUMNS_SPECIFIER: ClassVar[str] = '# global.columns ='
+
+    __slots__ = ['_columns', '_sentences']
+
     def __init__(self, it: Iterable[str]) -> None:
         """
-        Create a CoNLL-U file collection of sentences.
+        Create a CoNLL-U Plus file collection of sentences.
 
         Args:
-            it: An iterator of the lines of the CoNLL-U file.
+            it: An iterator of the lines of the CoNLL-U Plus file.
 
         Raises:
             ParseError: If there is an error constructing the sentences in the
                 iterator.
         """
-        self._sentences: List[Sentence] = []
-
-        for sentence in pyconll._parser.iter_sentences(it):
-            self._sentences.append(sentence)
+        first_line, it = util.peek_to_next_truthy(it)
+        self._columns = tuple(first_line[len(Conll.COLUMNS_SPECIFIER)+1:].strip().lower().split()) \
+            if first_line.startswith(Conll.COLUMNS_SPECIFIER) else Conll.CONLL_U_FORMAT
+        print("*"*80)
+        print(first_line)
+        print(self._columns)
+        self._sentences: List[Sentence] = list(pyconll._parser.iter_sentences(it, self._columns))
 
     def conll(self) -> str:
         """

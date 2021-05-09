@@ -4,17 +4,18 @@ Sentence objects from an iterator that returns CoNLL source lines. This logic
 can then be used in the Conll class or in pyconll.load.
 """
 
-from typing import Iterable, Iterator
+from typing import Iterable, Iterator, Tuple
 
 from pyconll.unit.sentence import Sentence
 
 
-def _create_sentence(sent_lines: Iterable[str]) -> Sentence:
+def _create_sentence(sent_lines: Iterable[str], columns: Tuple[str]) -> Sentence:
     """
     Creates a Sentence object given the current state of the source iteration.
 
     Args:
         sent_lines: An iterable of the lines that make up the source.
+        columns: The expected columns in the file.
 
     Returns:
         The created Sentence.
@@ -23,12 +24,10 @@ def _create_sentence(sent_lines: Iterable[str]) -> Sentence:
         ParseError: If the sentence source is not valid.
     """
     sent_source = '\n'.join(sent_lines)
-    sentence = Sentence(sent_source)
-
-    return sentence
+    return Sentence(sent_source, columns)
 
 
-def iter_sentences(lines_it: Iterable[str]) -> Iterator[Sentence]:
+def iter_sentences(lines_it: Iterable[str], columns: Tuple[str]) -> Iterator[Sentence]:
     """
     Iterate over the constructed sentences in the given lines.
 
@@ -36,6 +35,7 @@ def iter_sentences(lines_it: Iterable[str]) -> Iterator[Sentence]:
 
     Args:
         lines_it: An iterator over the lines to parse.
+        columns: The expected columns in the file.
 
     Yields:
         An iterator over the constructed Sentence objects found in the source.
@@ -52,11 +52,11 @@ def iter_sentences(lines_it: Iterable[str]) -> Iterator[Sentence]:
         if line:
             sent_lines.append(line)
         elif sent_lines:
-            sentence = _create_sentence(sent_lines)
+            sentence = _create_sentence(sent_lines, columns)
             sent_lines.clear()
 
             yield sentence
 
     if sent_lines:
-        sentence = _create_sentence(sent_lines)
+        sentence = _create_sentence(sent_lines, columns)
         yield sentence

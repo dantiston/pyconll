@@ -4,7 +4,7 @@ Defines the Sentence type and the associated parsing and output logic.
 
 import operator
 import re
-from typing import Dict, Iterator, List, Optional, Sequence, overload
+from typing import Dict, Iterator, List, Optional, Sequence, Tuple, overload
 
 from pyconll.conllable import Conllable
 from pyconll.tree._treebuilder import TreeBuilder
@@ -36,7 +36,7 @@ class Sentence(Sequence[Token], Conllable):
     the associated annotations can be changed.
     """
 
-    __slots__ = ['_meta', '_tokens', '_ids_to_indexes']
+    __slots__ = ['_meta', '_tokens', '_ids_to_indexes', '_columns']
 
     COMMENT_MARKER = '#'
     KEY_VALUE_COMMENT_PATTERN = COMMENT_MARKER + r'\s*([^=]+?)\s*=\s*(.+)'
@@ -45,18 +45,20 @@ class Sentence(Sequence[Token], Conllable):
     SENTENCE_ID_KEY = 'sent_id'
     TEXT_KEY = 'text'
 
-    def __init__(self, source: str) -> None:
+    def __init__(self, source: str, columns: Tuple[str]) -> None:
         """
         Construct a Sentence object from the provided CoNLL-U string.
 
         Args:
-            source: The raw CoNLL-U string to parse. Comments must precede token
-                lines.
+            source: The raw CoNLL-U Plus string to parse. Comments must precede
+                token lines.
 
         Raises:
             ParseError: If there is any token that was not valid.
         """
         lines = source.split('\n')
+
+        self._columns: Tuple[str] = columns
 
         self._meta: Dict[str, Optional[str]] = {}
         self._tokens: List[Token] = []
@@ -78,7 +80,7 @@ class Sentence(Sequence[Token], Conllable):
                         k = singleton_match.group(1)
                         self._meta[k] = None
                 else:
-                    token = Token(line)
+                    token = Token(line, columns)
                     self._tokens.append(token)
 
                     if token.id is not None:
