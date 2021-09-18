@@ -10,6 +10,7 @@ from pyconll.conllable import Conllable
 from pyconll.tree._treebuilder import TreeBuilder
 from pyconll.tree.tree import Tree
 from pyconll.unit.token import Token
+from pyconll.util import CONLL_U_FORMAT
 
 
 class Sentence(Sequence[Token], Conllable):
@@ -45,7 +46,7 @@ class Sentence(Sequence[Token], Conllable):
     SENTENCE_ID_KEY = 'sent_id'
     TEXT_KEY = 'text'
 
-    def __init__(self, source: str, columns: Tuple[str]) -> None:
+    def __init__(self, source: str, columns: Optional[Tuple[str, ...]] = None) -> None:
         """
         Construct a Sentence object from the provided CoNLL-U string.
 
@@ -58,7 +59,7 @@ class Sentence(Sequence[Token], Conllable):
         """
         lines = source.split('\n')
 
-        self._columns: Tuple[str] = columns
+        self._columns: Optional[Tuple[str, ...]] = columns or CONLL_U_FORMAT
 
         self._meta: Dict[str, Optional[str]] = {}
         self._tokens: List[Token] = []

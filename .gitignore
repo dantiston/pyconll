@@ -24,3 +24,4 @@ docs/_build
 
 # Temporary testing files
 __tmp__ud.conllu
+sample.py

@@ -4,12 +4,12 @@ Sentence objects from an iterator that returns CoNLL source lines. This logic
 can then be used in the Conll class or in pyconll.load.
 """
 
-from typing import Iterable, Iterator, Tuple
+from typing import Iterable, Iterator, Optional, Tuple
 
 from pyconll.unit.sentence import Sentence
 
 
-def _create_sentence(sent_lines: Iterable[str], columns: Tuple[str]) -> Sentence:
+def _create_sentence(sent_lines: Iterable[str], columns: Optional[Tuple[str, ...]]) -> Sentence:
     """
     Creates a Sentence object given the current state of the source iteration.
 
@@ -27,7 +27,7 @@ def _create_sentence(sent_lines: Iterable[str], columns: Tuple[str]) -> Sentence
     return Sentence(sent_source, columns)
 
 
-def iter_sentences(lines_it: Iterable[str], columns: Tuple[str]) -> Iterator[Sentence]:
+def iter_sentences(lines_it: Iterable[str], columns: Optional[Tuple[str, ...]]) -> Iterator[Sentence]:
     """
     Iterate over the constructed sentences in the given lines.
 

@@ -2,13 +2,14 @@
 Defines the Conll type and the associated parsing and output logic.
 """
 
-from typing import Any, ClassVar, Iterable, Iterator, List, Union, MutableSequence, Tuple, overload
+from typing import Any, ClassVar, Iterable, Iterator, List, Union, MutableSequence, Optional, Tuple, overload
 
 import pyconll._parser
 
 from pyconll import load
 from pyconll.conllable import Conllable
 from pyconll.unit.sentence import Sentence
+from pyconll.util import CONLL_U_FORMAT
 
 
 class Conll(MutableSequence[Sentence], Conllable):
@@ -24,7 +25,7 @@ class Conll(MutableSequence[Sentence], Conllable):
 
     __slots__ = ['_columns', '_sentences']
 
-    def __init__(self, it: Iterable[str]) -> None:
+    def __init__(self, it: Iterable[str], columns: Optional[Tuple[str, ...]] = None) -> None:
         """
         Create a CoNLL-U Plus file collection of sentences.
 
@@ -35,8 +36,9 @@ class Conll(MutableSequence[Sentence], Conllable):
             ParseError: If there is an error constructing the sentences in the
                 iterator.
         """
-        columns, it = load._get_columns_definition(it)
-        self._columns: List[str] = columns
+        if not columns:
+            columns, it = load._get_columns_definition(it)
+        self._columns: Tuple[str, ...] = columns or CONLL_U_FORMAT
         self._sentences: List[Sentence] = list(pyconll._parser.iter_sentences(it, columns))
 
     def conll(self) -> str:
@@ -131,7 +133,7 @@ class Conll(MutableSequence[Sentence], Conllable):
             return self._sentences[key]
 
         if isinstance(key, slice):
-            sliced_conll = Conll([])
+            sliced_conll = Conll([], columns=self._columns)
             sliced_conll._sentences = self._sentences[key]
 
             return sliced_conll

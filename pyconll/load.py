@@ -5,7 +5,7 @@ storing Conll objects in memory. This module is the main entrance to pyconll's
 functionalities.
 """
 
-from typing import Iterator, Iterable, Tuple
+from typing import Iterator, Iterable, Optional, Tuple
 
 from pyconll import util
 
@@ -13,8 +13,6 @@ from pyconll._parser import iter_sentences
 from pyconll.unit.conll import Conll
 from pyconll.unit.sentence import Sentence
 
-
-CONLL_U_FORMAT: Tuple[str] = ('id', 'form', 'lemma', 'upos', 'xpos', 'feats', 'head', 'deprel', 'deps', 'misc')
 
 COLUMNS_SPECIFIER: str = '# global.columns ='
 
@@ -99,8 +97,8 @@ def _iter_from_iterable(iterable: Iterable[str]) -> Iterator[Sentence]:
     columns, iterable = _get_columns_definition(iterable)
     yield from iter_sentences(iterable, columns)
 
-def _get_columns_definition(iterable: Iterable[str]) -> Tuple[Tuple[str], Iterable[str]]:
+def _get_columns_definition(iterable: Iterable[str]) -> Tuple[Optional[Tuple[str, ...]], Iterable[str]]:
     first_line, it = util.peek_to_next_truthy(iterable)
     columns = tuple(first_line[len(COLUMNS_SPECIFIER)+1:].strip().lower().split()) \
-        if first_line.startswith(COLUMNS_SPECIFIER) else CONLL_U_FORMAT
+        if first_line.startswith(COLUMNS_SPECIFIER) else None
     return columns, it

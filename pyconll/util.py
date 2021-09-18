@@ -7,16 +7,16 @@ import functools
 import itertools
 from typing import Iterable, Iterator, TypeVar, Sequence, List, Tuple
 
-from pyconll.unit.sentence import Sentence
-from pyconll.unit.token import Token
-
 T = TypeVar('T')
 
+CONLL_U_FORMAT: Tuple[str] = ('id', 'form', 'lemma', 'upos', 'xpos', 'feats', 'head', 'deprel', 'deps', 'misc')
+
+
 def find_ngrams(
-    conll: Iterable[Sentence],
+    conll: Iterable['Sentence'],
     ngram: Sequence[str],
     case_sensitive: bool = True
-) -> Iterator[Tuple[Sentence, int, List[Token]]]:
+) -> Iterator[Tuple['Sentence', int, List['Token']]]:
     """
     Find the occurrences of the ngram in the provided Conll collection.
 
@@ -78,7 +78,7 @@ def find_ngrams(
             i += 1
 
 
-def find_nonprojective_deps(sentence: Sentence) -> List[Tuple[Token, Token]]:
+def find_nonprojective_deps(sentence: 'Sentence') -> List[Tuple['Token', 'Token']]:
     """
     Find the nonprojective dependency pairs in the provided sentence.
 
@@ -254,9 +254,10 @@ def peek(iterable: Iterable[T]) -> Tuple[T, Iterable[T]]:
     try:
         first = iterable[0]
         return first, iterable
-    except:
+    except TypeError:
         first = next(iterable)
         return first, itertools.chain((first,), iterable)
+
 
 def peek_to_next_truthy(iterable: Iterable[T]) -> Tuple[T, Iterable[T]]:
     first, it = peek(iterable)

@@ -12,6 +12,7 @@ from typing import Callable, ClassVar, Dict, Optional, Set, Tuple
 
 from pyconll.conllable import Conllable
 from pyconll.exception import ParseError, FormatError
+from pyconll.util import CONLL_U_FORMAT
 
 
 Namespace = Dict[str, str]
@@ -652,7 +653,7 @@ class Token(Conllable):
     BY_CASE_INSENSITIVE: ClassVar[Callable[[Tuple[
         str, str]], str]] = lambda pair: pair[0].lower()
 
-    def __init__(self, source: str, columns: Tuple[str], empty: bool = False) -> None:
+    def __init__(self, source: str, columns: Optional[Tuple[str, ...]] = None, empty: bool = False) -> None:
         """
         Construct a Token from the given source line.
 
@@ -685,6 +686,7 @@ class Token(Conllable):
             source = source[:-1]
 
         fields = source.split(Token.FIELD_DELIMITER)
+        columns = columns or CONLL_U_FORMAT
 
         if len(fields) != len(columns):
             raise ParseError(f'The number of columns per token line must be'
