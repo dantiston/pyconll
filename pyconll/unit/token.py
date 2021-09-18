@@ -18,6 +18,8 @@ from pyconll.util import CONLL_U_FORMAT
 Namespace = Dict[str, str]
 Namespaces = Dict[str, Namespace]
 
+NAMESPACE_SEPARATOR: str = ":"
+
 
 def _unit_empty_map(values: Dict[str, str], key: str, empty):
     """
@@ -444,9 +446,6 @@ def _dict_conll_map_helper(values, empty, delim, av_separator, v_delimiter,
     return output if output else empty
 
 
-NAMESPACE_SEPARATOR: str = ":"
-
-
 def _parse_namespaces(values: Dict[str, str]) -> Namespaces:
     values = {k: v for k, v in values.items() if NAMESPACE_SEPARATOR in k}
     separated_keys = {namespace: list(k)
@@ -616,20 +615,19 @@ class Token(Conllable):
     sentences.
     """
 
-    # TODO: Think on how this could be brought back
-    # __slots__ = [
-    #     'id',
-    #     'form',
-    #     'lemma',
-    #     'upos',
-    #     'xpos',
-    #     'feats',
-    #     'head',
-    #     'deprel',
-    #     'deps',
-    #     'misc',
-    #     'namespace',
-    # ]
+    __slots__ = (
+        'id',
+        '_form',
+        'lemma',
+        'upos',
+        'xpos',
+        'feats',
+        'head',
+        'deprel',
+        'deps',
+        'misc',
+        'namespace',
+    )
 
     # The different delimiters and separators for the CoNLL-U format.
     # FIELD_DELIMITER separates columns on the token line.

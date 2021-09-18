@@ -14,9 +14,6 @@ from pyconll.unit.conll import Conll
 from pyconll.unit.sentence import Sentence
 
 
-COLUMNS_SPECIFIER: str = '# global.columns ='
-
-
 def load_from_string(source: str) -> Conll:
     """
     Load the CoNLL-U source in a string into a Conll object.
@@ -99,6 +96,6 @@ def _iter_from_iterable(iterable: Iterable[str]) -> Iterator[Sentence]:
 
 def _get_columns_definition(iterable: Iterable[str]) -> Tuple[Optional[Tuple[str, ...]], Iterable[str]]:
     first_line, it = util.peek_to_next_truthy(iterable)
-    columns = tuple(first_line[len(COLUMNS_SPECIFIER)+1:].strip().lower().split()) \
-        if first_line.startswith(COLUMNS_SPECIFIER) else None
+    columns = tuple(first_line[len(util.COLUMNS_SPECIFIER)+1:].strip().lower().split()) \
+        if first_line.startswith(util.COLUMNS_SPECIFIER) else None
     return columns, it

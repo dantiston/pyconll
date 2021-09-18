@@ -1,9 +1,8 @@
 import pytest
 
-from pyconll.unit.token import Token
-from tests.unit.util import assert_token_members
-
+from pyconll.unit.token import Token, _parse_namespaces
 from pyconll.exception import ParseError, FormatError
+from tests.unit.util import assert_token_members
 
 
 def test_construction():
@@ -32,7 +31,7 @@ def test_construction_no_newline():
     }, '4', 'nmod', {}, {})
 
 
-def test_only_form_and_lemma():
+def test_construction_only_form_and_lemma():
     """
     Test construction when token line only has a form and lemma.
     """
@@ -40,6 +39,17 @@ def test_only_form_and_lemma():
     token = Token(token_line)
 
     assert_token_members(token, '10.1', 'micro-pays', 'micro-pays', None, None,
+                         {}, None, None, {}, {})
+
+
+def test_construction_columns():
+    """
+    Test the construction of a general token with columns specified
+    """
+    token_line = '7	dog	dogs	NOUN'
+    token = Token(token_line, columns=('id', 'lemma', 'form', 'upos'))
+
+    assert_token_members(token, '7', 'dogs', 'dog', 'NOUN', None,
                          {}, None, None, {}, {})
 
 
@@ -491,3 +501,19 @@ def test_deps_sort_order_decimal():
             '0	root	2:nmod|10.1:nsubj|10.2:nsubj	SpaceAfter=No'
 
     assert conll == formatted_line
+
+
+def test_parse_namespaces_one():
+    values = {'TEST_NAMESPACE:TEST_COLUMN': 'test_value'}
+    
+    namespaces = _parse_namespaces(values)
+
+    assert namespaces == {'TEST_NAMESPACE': {'TEST_COLUMN': 'test_value'}}
+
+
+def test_parse_namespaces_multiple():
+    values = {'TEST_NAMESPACE:TEST_COLUMN1': 'test_value1', 'TEST_NAMESPACE:TEST_COLUMN2': 'test_value2'}
+    
+    namespaces = _parse_namespaces(values)
+
+    assert namespaces == {'TEST_NAMESPACE': {'TEST_COLUMN1': 'test_value1', 'TEST_COLUMN2': 'test_value2'}}

@@ -976,6 +976,28 @@ def test_no_text_singleton():
     assert sentence.text is None
 
 
+def test_columns_minimal():
+    source = (
+        '1	Les	le	DET\n'
+        '2	études	étude	NOUN\n'
+        '3	durent	durer	VERB\n'
+        '4	six	six	NUM\n'
+        '5	ans	an	NOUN\n'
+        '6	mais	mais	CCONJ\n'
+        '7	leur	son	DET\n'
+        '8	contenu	contenu	NOUN\n'
+        '9	diffère	différer	VERB\n'
+        '10	donc	donc	ADV\n'
+        '11	selon	selon	ADP\n'
+        '12	les	le	DET\n'
+        '13	Facultés	Facultés	PROPN\n'
+        '14	.	.	PUNCT\n')
+    columns = ('id', 'form', 'lemma', 'upos')
+    sentence = Sentence(source, columns=columns)
+
+    assert sentence._columns == columns
+
+
 def test_invalid_sentence_by_token():
     """
     Test that an invalid token results in an invalid sentence.

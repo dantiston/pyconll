@@ -9,7 +9,7 @@ import pyconll._parser
 from pyconll import load
 from pyconll.conllable import Conllable
 from pyconll.unit.sentence import Sentence
-from pyconll.util import CONLL_U_FORMAT
+from pyconll.util import COLUMNS_SPECIFIER, CONLL_U_FORMAT
 
 
 class Conll(MutableSequence[Sentence], Conllable):
@@ -23,9 +23,14 @@ class Conll(MutableSequence[Sentence], Conllable):
     to the standard CoNLL-U format.
     """
 
-    __slots__ = ['_columns', '_sentences']
+    __slots__ = ['_columns', '_columns_processed', '_sentences']
 
-    def __init__(self, it: Iterable[str], columns: Optional[Tuple[str, ...]] = None) -> None:
+    def __init__(
+            self,
+            it: Iterable[str],
+            columns: Optional[Tuple[str, ...]] = None,
+            columns_processed: bool = False
+    ) -> None:
         """
         Create a CoNLL-U Plus file collection of sentences.
 
@@ -36,9 +41,10 @@ class Conll(MutableSequence[Sentence], Conllable):
             ParseError: If there is an error constructing the sentences in the
                 iterator.
         """
-        if not columns:
+        if not columns_processed:
             columns, it = load._get_columns_definition(it)
-        self._columns: Tuple[str, ...] = columns or CONLL_U_FORMAT
+        self._columns_processed = columns_processed
+        self._columns: Optional[Tuple[str, ...]] = columns
         self._sentences: List[Sentence] = list(pyconll._parser.iter_sentences(it, columns))
 
     def conll(self) -> str:
@@ -51,6 +57,8 @@ class Conll(MutableSequence[Sentence], Conllable):
         # Add newlines along with sentence strings so that there is no need to
         # slice potentially long lists or modify strings.
         components = list(map(lambda sent: sent.conll(), self._sentences))
+        if self._columns_processed:
+            components = [f"{COLUMNS_SPECIFIER} {' '.join(self._columns)}"] + components
         components.append('')
 
         return '\n\n'.join(components)
@@ -133,7 +141,7 @@ class Conll(MutableSequence[Sentence], Conllable):
             return self._sentences[key]
 
         if isinstance(key, slice):
-            sliced_conll = Conll([], columns=self._columns)
+            sliced_conll = Conll([], columns=self._columns, columns_processed=True)
             sliced_conll._sentences = self._sentences[key]
 
             return sliced_conll

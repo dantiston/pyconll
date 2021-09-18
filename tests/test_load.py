@@ -1,6 +1,7 @@
 import pytest
 
 from pyconll import load_from_string, load_from_file, iter_from_string, iter_from_file
+from pyconll.load import _get_columns_definition
 from tests.util import fixture_location
 from tests.unit.util import assert_token_members
 
@@ -98,3 +99,23 @@ def test_iter_from_file():
     ]
 
     assert expected_ids == actual_ids
+
+def test_get_columns_definition():
+    with open(fixture_location('basic.conllup'), encoding='utf-8') as f:
+        contents = f.readlines()
+
+    expected_columns = ('id', 'form', 'upos', 'head', 'deprel', 'misc', 'parseme:mwe')
+    actual_columns, actual_it = _get_columns_definition(contents)
+
+    assert expected_columns == actual_columns
+    assert contents == list(actual_it)
+
+def test_get_columns_definition_string():
+    with open(fixture_location('basic.conllup'), encoding='utf-8') as f:
+        contents = f.readlines()
+
+    expected_columns = ('id', 'form', 'upos', 'head', 'deprel', 'misc', 'parseme:mwe')
+    actual_columns, actual_it = _get_columns_definition(contents)
+
+    assert expected_columns == actual_columns
+    assert contents == list(actual_it)

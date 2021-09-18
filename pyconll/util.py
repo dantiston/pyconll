@@ -10,7 +10,7 @@ from typing import Iterable, Iterator, TypeVar, Sequence, List, Tuple
 T = TypeVar('T')
 
 CONLL_U_FORMAT: Tuple[str] = ('id', 'form', 'lemma', 'upos', 'xpos', 'feats', 'head', 'deprel', 'deps', 'misc')
-
+COLUMNS_SPECIFIER: str = '# global.columns ='
 
 def find_ngrams(
     conll: Iterable['Sentence'],

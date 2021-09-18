@@ -4,6 +4,7 @@ import pytest
 
 from pyconll.unit.conll import Conll
 from pyconll.unit.sentence import Sentence
+from pyconll.util import COLUMNS_SPECIFIER, CONLL_U_FORMAT
 from tests.util import fixture_location
 
 
@@ -70,6 +71,13 @@ def test_many_newlines():
     assert conll[3].id == 'fr-ud-dev_00004'
 
 
+def test_columns_minimal():
+    with open(fixture_location('basic.conllup')) as f:
+        conll = Conll(f)
+
+    assert conll._columns == ('id', 'form', 'upos', 'head', 'deprel', 'misc', 'parseme:mwe')
+
+
 def test_numeric_indexing():
     """
     Test the ability to index sentences through their numeric position.
@@ -107,6 +115,18 @@ def test_string_output():
         f.seek(0)
         conll = Conll(f)
 
+    assert contents == conll.conll()
+
+
+def test_string_output_columns():
+    """
+    Test that the strings are properly created with columns.
+    """
+    with open(fixture_location('basic.conll')) as f:
+        contents = f.read()
+
+    contents = f'{COLUMNS_SPECIFIER} {" ".join(CONLL_U_FORMAT)}\n{contents}'
+    conll = Conll(contents.split('\n'))
     assert contents == conll.conll()
 
 
